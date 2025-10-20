@@ -2,54 +2,86 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
-  const [username, setUsername] = useState('');
+  const [username, setUserName] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     try {
       const res = await axios.post('http://localhost:3001/api/auth/login', {
         username,
-        password,
+        password
       });
-      alert('✅ Successful login! Token: ' + res.data.token);
+
+  // Check that the token exists and is in the correct format
+      const tokenValue = res.data.token || res.data.access_token;
+      if (!tokenValue) {
+        console.error('Server did not return token:', res.data);
+        setError('Authentication failed: Server did not return a valid token');
+        return;
+      }
+      
+      console.log('Received token from server:', tokenValue);
+      
+  // Save the token and verify it was stored
+      localStorage.setItem('token', tokenValue);
+      const storedToken = localStorage.getItem('token');
+      console.log('Stored token verification:', storedToken ? 'saved successfully' : 'failed to save');
+      
+      if (!storedToken) {
+        setError('Failed to store authentication token. Please try again.');
+        return;
+      }
+
+      alert('Login successful ✅');
+      router.push('/workouts');
+
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        alert('❌ Login failed: ' + err.response?.data?.message || err.message);
+        setError(err.response?.data?.message || err.message);
       } else if (err instanceof Error) {
-        alert('❌ Login failed: ' + err.message);
+        setError(err.message);
       } else {
-        alert('❌ Login failed: unknown error');
+        setError('Unknown error');
       }
     }
   };
 
   return (
-    <main className="p-8 flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-6">FitStack Login 💪</h1>
-      <form onSubmit={handleLogin} className="flex flex-col gap-4 w-80">
+    <form onSubmit={handleLogin} className="space-y-4 max-w-sm mx-auto p-6 border rounded shadow">
+      <h1 className="text-xl font-bold">Login</h1>
+      <div>
+        <label>Username:</label>
         <input
           type="text"
-          placeholder="Username"
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="border p-2 rounded"
-          required
+          onChange={(e) => setUserName(e.target.value)}
+          className="w-full border p-2 rounded"
         />
+      </div>
+      <div>
+        <label>Password:</label>
         <input
           type="password"
-          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border p-2 rounded"
-          required
+          className="w-full border p-2 rounded"
         />
-        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-          Login
-        </button>
-      </form>
-    </main>
+      </div>
+      {error && <p className="text-red-500">{error}</p>}
+      <button
+        type="submit"
+        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+      >
+        Login
+      </button>
+    </form>
   );
 }
