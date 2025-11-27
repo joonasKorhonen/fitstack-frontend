@@ -1,79 +1,75 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import LogoutButton from "@/components/LogoutButton";
-
-interface Workout {
-  id: number;
-  exercise: string;
-  reps: number;
-  weight?: number;
-  notes?: string;
-  date: string;
-}
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import WorkoutCard from './components/WorkoutCard';
+import LogoutButton from '../../components/LogoutButton';
 
 export default function WorkoutsPage() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
   useEffect(() => {
+    if (!token) {
+      router.push('/');
+      return;
+    }
+
     const fetchWorkouts = async () => {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        router.push("/");
-        return;
-      }
-
       try {
-        const res = await axios.get("http://localhost:3001/api/workouts", {
+        const res = await fetch('http://localhost:3001/api/workouts', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setWorkouts(res.data);
-      } catch (err: unknown) {
-        if (axios.isAxiosError(err)) {
-          setError(err.response?.data?.message || err.message);
-        } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Unknown error");
+
+        if (!res.ok) {
+          throw new Error('Virhe haettaessa treenejä');
         }
+
+        const data = await res.json();
+        setWorkouts(data);
+      } catch (error: any) {
+        setError(error.message || 'Tuntematon virhe');
       } finally {
         setLoading(false);
       }
     };
 
     fetchWorkouts();
-  }, [router]);
+  }, [token, router]);
 
-  if (loading) return <p className="p-8 text-center">Loading workouts...</p>;
-  if (error) return <p className="p-8 text-center text-red-500">Error: {error}</p>;
+  if (loading) return <p className="p-6 text-center">Ladataan treenejä...</p>;
+  if (error) return <p className="p-6 text-center text-red-500">{error}</p>;
 
   return (
-    <main className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Your Workouts 💪</h1>
+    <main className="max-w-3xl mx-auto p-6 space-y-6 relative">
+      {/* LogoutButton oikeaan yläkulmaan */}
+      <div className="absolute top-4 right-4">
         <LogoutButton />
       </div>
 
+      <div className="flex justify-between items-center mt-10">
+        <h1 className="text-3xl font-bold">Treenit 💪</h1>
+        <Link
+          href="/workouts/create"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          + Uusi treeni
+        </Link>
+      </div>
+
       {workouts.length === 0 ? (
-        <p className="text-center">No workouts added yet.</p>
+        <p className="text-gray-600 text-center">Ei vielä treenejä. Luo ensimmäinen!</p>
       ) : (
-        <ul className="space-y-4">
-          {workouts.map((w) => (
-            <li key={w.id} className="border p-4 rounded shadow">
-              <p><strong>Exercise:</strong> {w.exercise}</p>
-              <p><strong>Reps:</strong> {w.reps}</p>
-              {w.weight && <p><strong>Weight:</strong> {w.weight} kg</p>}
-              {w.notes && <p><strong>Notes:</strong> {w.notes}</p>}
-              <p><strong>Date:</strong> {new Date(w.date).toLocaleDateString()}</p>
-            </li>
+        <div className="grid gap-3">
+          {workouts.map((workout) => (
+            <WorkoutCard key={workout.id} workout={workout} />
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );
