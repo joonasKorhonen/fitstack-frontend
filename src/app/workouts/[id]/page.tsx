@@ -52,6 +52,12 @@ export default function WorkoutDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-4">
+      <button
+        onClick={() => router.push('/workouts')}
+        className="text-blue-600 font-semibold mb-4 hover:underline"
+      >
+        ← Takaisin
+      </button>
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">
           {new Date(workout.date).toLocaleDateString('fi-FI')}
