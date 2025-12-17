@@ -55,7 +55,10 @@ export async function DELETE(
 
     console.log(`API Proxy - Backend response status for DELETE workout ${id}:`, response.status);
 
-    const data = await response.json();
+    const data = await response.json().catch((err) => {
+      return { message: 'Deleted successfully' };
+    });
+
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error('API Proxy - Error deleting workout:', error);

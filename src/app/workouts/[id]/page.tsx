@@ -39,13 +39,46 @@ export default function WorkoutDetailPage() {
       return;
     }
 
-    await fetch(`/api/workouts/${id}`, {
+    const res = await fetch(`/api/workouts/${id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    router.push('/workouts');
+
+    if (res.ok) {
+      router.push('/workouts');
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      alert('Virhe treenin poistamisessa: ' + (errorData.error || errorData.message || 'Tuntematon virhe'));
+    }
+  };
+
+  const handleRemoveSet = async (index: number) => {
+    if (!confirm('Poistetaanko tämä setti?')) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/');
+      return;
+    }
+
+    const setToRemove = workout.sets[index];
+    const setId = setToRemove.id;
+
+    const res = await fetch(`/api/workouts/${id}/sets/${setId}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.ok) {
+      const updatedSets = workout.sets.filter((_: any, i: number) => i !== index);
+      setWorkout({ ...workout, sets: updatedSets });
+    } else {
+      alert('Virhe setin poistamisessa');
+    }
   };
 
   if (!workout) return <p>Ladataan...</p>;
@@ -74,7 +107,7 @@ export default function WorkoutDetailPage() {
         <p className="text-gray-700 italic">{workout.notes}</p>
       )}
 
-      <WorkoutSetList sets={workout.sets} onRemove={() => {}} />
+      <WorkoutSetList sets={workout.sets} onRemove={handleRemoveSet} />
     </div>
   );
 }
