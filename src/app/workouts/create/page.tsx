@@ -88,8 +88,8 @@ export default function CreateWorkoutPage() {
 
         <button
           type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          disabled={loading || sets.length === 0}
+          className="bg-blue-600 text-white px-4 py-2 rounded disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? 'Tallennetaan...' : 'Tallenna treeni'}
         </button>
