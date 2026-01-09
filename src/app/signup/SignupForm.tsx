@@ -21,14 +21,9 @@ export default function SignupForm() {
     }
 
     // Password strength validation
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return false;
-    }
-
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
-    if (!passwordRegex.test(password)) {
-      setError('Password must contain uppercase, lowercase, and number');
+    if (password.length < 8 || !passwordRegex.test(password)) {
+      setError('Password must be at least 8 characters with uppercase, lowercase, and number');
       return false;
     }
 
