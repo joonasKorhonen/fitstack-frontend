@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginForm() {
   const [username, setUserName] = useState('');
@@ -82,6 +83,9 @@ export default function LoginForm() {
       >
         Login
       </button>
+      <div className="text-center text-sm">
+        Don't have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link>
+      </div>
     </form>
   );
 }
