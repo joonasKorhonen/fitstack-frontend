@@ -1,5 +1,5 @@
-import LoginForm from './login/LoginForm';
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <LoginForm />;
+  redirect('/login');
 }
