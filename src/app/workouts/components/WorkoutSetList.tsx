@@ -15,7 +15,9 @@ export default function WorkoutSetList({
       {sets.map((set, i) => (
         <div key={i} className="border p-3 rounded flex justify-between">
           <div>
-            <p className="font-medium">{set.exercise}</p>
+            <p className="font-medium">
+              {set.movementName || set.movement?.name || set.exercise || 'Tuntematon liike'}
+            </p>
             <p className="text-sm text-gray-600">
               {set.reps} x {set.weight ?? '-'} kg | Int: {set.intensity ?? '-'}
             </p>

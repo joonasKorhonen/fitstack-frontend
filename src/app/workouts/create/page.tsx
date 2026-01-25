@@ -32,8 +32,17 @@ export default function CreateWorkoutPage() {
       return;
     }
 
-    const requestBody = { date, notes, sets };
-    console.log('Frontend - Sending request:');
+    // Transform sets to send movementId
+    const transformedSets = sets.map(set => ({
+      movementId: set.movementId,
+      reps: set.reps,
+      weight: set.weight,
+      intensity: set.intensity,
+      notes: set.notes,
+    }));
+
+    const requestBody = { date, notes, sets: transformedSets };
+    console.log('Frontend - Sending request with movements:');
     console.log('  Token:', token ? `${token.substring(0, 20)}...` : 'Missing');
     console.log('  Body:', JSON.stringify(requestBody, null, 2));
 
