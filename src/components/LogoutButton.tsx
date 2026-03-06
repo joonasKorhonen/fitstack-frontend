@@ -1,12 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function LogoutButton() {
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+
+    if (refreshToken) {
+      try {
+        await axios.post("http://localhost:3001/api/auth/logout", {
+          refreshToken,
+        });
+      } catch {
+        // Logout even if the API call fails
+      }
+    }
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
     router.push("/");
   };
 

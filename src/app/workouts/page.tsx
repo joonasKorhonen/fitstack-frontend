@@ -12,7 +12,7 @@ export default function WorkoutsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
   useEffect(() => {
     if (!token) {

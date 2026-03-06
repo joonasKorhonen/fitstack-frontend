@@ -25,7 +25,7 @@ export default function CreateWorkoutPage() {
 
     setLoading(true);
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       alert('Et ole kirjautunut sisään');
       router.push('/');

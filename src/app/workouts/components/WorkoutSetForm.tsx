@@ -35,7 +35,7 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
   }, []);
 
   const fetchMovements = async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) return;
 
     try {
@@ -52,7 +52,7 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
   };
 
   const createMovement = async (name: string): Promise<Movement | null> => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) return null;
 
     try {

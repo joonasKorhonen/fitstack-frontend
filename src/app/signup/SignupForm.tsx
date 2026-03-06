@@ -53,25 +53,15 @@ export default function SignupForm() {
         password
       });
 
-      // Check that the token exists and is in the correct format
-      const tokenValue = res.data.token || res.data.access_token;
-      if (!tokenValue) {
+      const { accessToken, refreshToken } = res.data;
+      if (!accessToken) {
         console.error('Server did not return token:', res.data);
         setError('Registration failed: Server did not return a valid token');
         return;
       }
 
-      console.log('Received token from server:', tokenValue);
-
-      // Save the token and verify it was stored
-      localStorage.setItem('token', tokenValue);
-      const storedToken = localStorage.getItem('token');
-      console.log('Stored token verification:', storedToken ? 'saved successfully' : 'failed to save');
-
-      if (!storedToken) {
-        setError('Failed to store authentication token. Please try again.');
-        return;
-      }
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
 
       // Auto-login: redirect to workouts
       router.push('/workouts');

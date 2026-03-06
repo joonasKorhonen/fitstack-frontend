@@ -11,7 +11,7 @@ export default function WorkoutDetailPage() {
 
   useEffect(() => {
     const fetchWorkout = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('accessToken');
       if (!token) {
         router.push('/');
         return;
@@ -33,7 +33,7 @@ export default function WorkoutDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Poistetaanko tämä treeni?')) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/');
       return;
@@ -57,7 +57,7 @@ export default function WorkoutDetailPage() {
   const handleRemoveSet = async (index: number) => {
     if (!confirm('Poistetaanko tämä setti?')) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       router.push('/');
       return;
