@@ -95,12 +95,20 @@ export default function WorkoutDetailPage() {
         <h1 className="text-2xl font-bold">
           {new Date(workout.date).toLocaleDateString('fi-FI')}
         </h1>
-        <button
-          onClick={handleDelete}
-          className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded"
-        >
-          Poista
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push(`/workouts/${id}/edit`)}
+            className="text-blue-600 font-semibold border border-blue-600 px-3 py-1 rounded"
+          >
+            Muokkaa
+          </button>
+          <button
+            onClick={handleDelete}
+            className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded"
+          >
+            Poista
+          </button>
+        </div>
       </div>
 
       {workout.notes && (
