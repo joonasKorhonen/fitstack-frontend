@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import WorkoutSetForm from '../../components/WorkoutSetForm';
 import WorkoutSetList from '../../components/WorkoutSetList';
+import { authFetch } from '../../../../lib/authFetch';
 
 export default function EditWorkoutPage() {
   const { id } = useParams();
@@ -16,15 +17,8 @@ export default function EditWorkoutPage() {
 
   useEffect(() => {
     const fetchWorkout = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/');
-        return;
-      }
-
-      const res = await fetch(`/api/workouts/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await authFetch(`/api/workouts/${id}`, router);
+      if (!res) return;
 
       if (res.ok) {
         const data = await res.json();
@@ -39,14 +33,11 @@ export default function EditWorkoutPage() {
   const handleRemoveExistingSet = async (index: number) => {
     if (!confirm('Poistetaanko tämä sarja?')) return;
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-
     const setToRemove = workout.sets[index];
-    const res = await fetch(`/api/workouts/${id}/sets/${setToRemove.id}`, {
+    const res = await authFetch(`/api/workouts/${id}/sets/${setToRemove.id}`, router, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res) return;
 
     if (res.ok) {
       const updatedSets = workout.sets.filter((_: any, i: number) => i !== index);
@@ -63,21 +54,13 @@ export default function EditWorkoutPage() {
     e.preventDefault();
     setLoading(true);
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/');
-      return;
-    }
-
     // 1. Update date and notes
-    await fetch(`/api/workouts/${id}`, {
+    const updateRes = await authFetch(`/api/workouts/${id}`, router, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, notes }),
     });
+    if (!updateRes) return;
 
     // 2. Add new sets if any
     if (newSets.length > 0) {
@@ -89,12 +72,9 @@ export default function EditWorkoutPage() {
         notes: set.notes,
       }));
 
-      await fetch(`/api/workouts/${id}/sets`, {
+      await authFetch(`/api/workouts/${id}/sets`, router, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sets: transformedSets }),
       });
     }

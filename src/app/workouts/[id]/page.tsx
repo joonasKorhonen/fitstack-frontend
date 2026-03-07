@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import WorkoutSetList from '../components/WorkoutSetList';
+import { authFetch } from '../../../lib/authFetch';
 
 export default function WorkoutDetailPage() {
   const { id } = useParams();
@@ -11,17 +12,8 @@ export default function WorkoutDetailPage() {
 
   useEffect(() => {
     const fetchWorkout = async () => {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        router.push('/');
-        return;
-      }
-
-      const res = await fetch(`/api/workouts/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await authFetch(`/api/workouts/${id}`, router);
+      if (!res) return;
 
       if (res.ok) {
         setWorkout(await res.json());
@@ -33,18 +25,8 @@ export default function WorkoutDetailPage() {
   const handleDelete = async () => {
     if (!confirm('Poistetaanko tämä treeni?')) return;
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/');
-      return;
-    }
-
-    const res = await fetch(`/api/workouts/${id}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await authFetch(`/api/workouts/${id}`, router, { method: 'DELETE' });
+    if (!res) return;
 
     if (res.ok) {
       router.push('/workouts');
@@ -57,21 +39,11 @@ export default function WorkoutDetailPage() {
   const handleRemoveSet = async (index: number) => {
     if (!confirm('Poistetaanko tämä setti?')) return;
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      router.push('/');
-      return;
-    }
-
     const setToRemove = workout.sets[index];
     const setId = setToRemove.id;
 
-    const res = await fetch(`/api/workouts/${id}/sets/${setId}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await authFetch(`/api/workouts/${id}/sets/${setId}`, router, { method: 'DELETE' });
+    if (!res) return;
 
     if (res.ok) {
       const updatedSets = workout.sets.filter((_: any, i: number) => i !== index);

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import WorkoutCard from './components/WorkoutCard';
 import LogoutButton from '../../components/LogoutButton';
+import { authFetch } from '../../lib/authFetch';
 
 export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<any[]>([]);
@@ -12,19 +13,11 @@ export default function WorkoutsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-
   useEffect(() => {
-    if (!token) {
-      router.push('/');
-      return;
-    }
-
     const fetchWorkouts = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/workouts', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await authFetch('http://localhost:3001/api/workouts', router);
+        if (!res) return;
 
         if (!res.ok) {
           throw new Error('Virhe haettaessa treenejä');
@@ -40,7 +33,7 @@ export default function WorkoutsPage() {
     };
 
     fetchWorkouts();
-  }, [token, router]);
+  }, [router]);
 
   if (loading) return <p className="p-6 text-center">Ladataan treenejä...</p>;
   if (error) return <p className="p-6 text-center text-red-500">{error}</p>;

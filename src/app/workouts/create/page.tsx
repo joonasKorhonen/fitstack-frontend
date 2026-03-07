@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WorkoutSetForm from '../components/WorkoutSetForm';
 import WorkoutSetList from '../components/WorkoutSetList';
+import { authFetch } from '../../../lib/authFetch';
 
 export default function CreateWorkoutPage() {
   const router = useRouter();
@@ -25,13 +26,6 @@ export default function CreateWorkoutPage() {
 
     setLoading(true);
 
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      alert('Et ole kirjautunut sisään');
-      router.push('/');
-      return;
-    }
-
     // Transform sets to send movementId
     const transformedSets = sets.map(set => ({
       movementId: set.movementId,
@@ -42,28 +36,20 @@ export default function CreateWorkoutPage() {
     }));
 
     const requestBody = { date, notes, sets: transformedSets };
-    console.log('Frontend - Sending request with movements:');
-    console.log('  Token:', token ? `${token.substring(0, 20)}...` : 'Missing');
-    console.log('  Body:', JSON.stringify(requestBody, null, 2));
 
-    const res = await fetch('/api/workouts', {
+    const res = await authFetch('/api/workouts', router, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Frontend - Response status:', res.status);
-
     setLoading(false);
+    if (!res) return;
+
     if (res.ok) {
-      console.log('Frontend - Success! Redirecting...');
       router.push('/workouts');
     } else {
       const errorData = await res.json().catch(() => ({}));
-      console.error('Frontend - Error response:', errorData);
       alert('Virhe tallennuksessa: ' + (errorData.message || errorData.error || 'Tuntematon virhe'));
     }
   };
