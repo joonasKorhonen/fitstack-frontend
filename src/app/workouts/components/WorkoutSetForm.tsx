@@ -127,7 +127,13 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
     };
 
     if (weight) newSet.weight = Number(weight);
-    if (intensity) newSet.intensity = Number(intensity);
+    if (intensity) {
+      const intensityNum = Number(intensity);
+      if (intensityNum < 1 || intensityNum > 10) {
+        return alert('Intensiteetin pitää olla 1-10');
+      }
+      newSet.intensity = intensityNum;
+    }
     if (notes) newSet.notes = notes;
 
     onAdd(newSet);
@@ -215,11 +221,13 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
           type="number"
         />
         <input
-          placeholder="Intensiteetti"
+          placeholder="Intensiteetti (1-10)"
           value={intensity}
           onChange={(e) => setIntensity(e.target.value)}
           className="border p-2 rounded"
           type="number"
+          min={1}
+          max={10}
         />
       </div>
       <textarea
