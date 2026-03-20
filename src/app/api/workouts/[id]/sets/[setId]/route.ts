@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string; setId: string } }
+) {
+  try {
+    const token = request.headers.get('authorization');
+    const { id, setId } = params;
+    const body = await request.json();
+
+    const response = await fetch(`${BACKEND_URL}/api/workouts/${id}/sets/${setId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: token }),
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Failed to update set', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string; setId: string } }

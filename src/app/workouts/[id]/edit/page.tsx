@@ -12,6 +12,7 @@ export default function EditWorkoutPage() {
   const [workout, setWorkout] = useState<any>(null);
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [editedSets, setEditedSets] = useState<any[]>([]);
   const [newSets, setNewSets] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -25,23 +26,36 @@ export default function EditWorkoutPage() {
         setWorkout(data);
         setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : '');
         setNotes(data.notes || '');
+        setEditedSets(data.sets.map((s: any) => ({
+          id: s.id,
+          reps: s.reps,
+          weight: s.weight ?? '',
+          intensity: s.intensity ?? '',
+          notes: s.notes ?? '',
+          movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
+        })));
       }
     };
     fetchWorkout();
   }, [id, router]);
 
+  const handleEditSet = (index: number, field: string, value: string) => {
+    const updated = [...editedSets];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditedSets(updated);
+  };
+
   const handleRemoveExistingSet = async (index: number) => {
     if (!confirm('Poistetaanko tämä sarja?')) return;
 
-    const setToRemove = workout.sets[index];
+    const setToRemove = editedSets[index];
     const res = await authFetch(`/api/workouts/${id}/sets/${setToRemove.id}`, router, {
       method: 'DELETE',
     });
     if (!res) return;
 
     if (res.ok) {
-      const updatedSets = workout.sets.filter((_: any, i: number) => i !== index);
-      setWorkout({ ...workout, sets: updatedSets });
+      setEditedSets(editedSets.filter((_, i) => i !== index));
     } else {
       alert('Virhe sarjan poistamisessa');
     }
@@ -62,7 +76,21 @@ export default function EditWorkoutPage() {
     });
     if (!updateRes) return;
 
-    // 2. Add new sets if any
+    // 2. Update edited existing sets
+    for (const set of editedSets) {
+      await authFetch(`/api/workouts/${id}/sets/${set.id}`, router, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reps: Number(set.reps),
+          weight: set.weight !== '' ? Number(set.weight) : undefined,
+          intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
+          notes: set.notes || undefined,
+        }),
+      });
+    }
+
+    // 3. Add new sets if any
     if (newSets.length > 0) {
       const transformedSets = newSets.map(set => ({
         movementId: set.movementId,
@@ -116,11 +144,68 @@ export default function EditWorkoutPage() {
           />
         </div>
 
-        {/* Existing sets */}
+        {/* Existing sets - editable */}
         <div>
           <h2 className="font-semibold text-lg mb-2">Nykyiset sarjat</h2>
-          {workout.sets.length > 0 ? (
-            <WorkoutSetList sets={workout.sets} onRemove={handleRemoveExistingSet} />
+          {editedSets.length > 0 ? (
+            <div className="space-y-2">
+              {editedSets.map((set, i) => (
+                <div key={set.id} className="border p-3 rounded space-y-2">
+                  <div className="flex justify-between items-center">
+                    <p className="font-medium">{set.movementName}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingSet(i)}
+                      className="text-red-600 font-semibold"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className="text-xs text-gray-500">Toistot</label>
+                      <input
+                        type="number"
+                        value={set.reps}
+                        onChange={(e) => handleEditSet(i, 'reps', e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                        min={1}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Paino (kg)</label>
+                      <input
+                        type="number"
+                        value={set.weight}
+                        onChange={(e) => handleEditSet(i, 'weight', e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                        min={0}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Intensiteetti</label>
+                      <input
+                        type="number"
+                        value={set.intensity}
+                        onChange={(e) => handleEditSet(i, 'intensity', e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                        min={1}
+                        max={10}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Muistiinpanot</label>
+                      <input
+                        type="text"
+                        value={set.notes}
+                        onChange={(e) => handleEditSet(i, 'notes', e.target.value)}
+                        className="w-full border p-1 rounded text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-gray-500">Ei sarjoja</p>
           )}
