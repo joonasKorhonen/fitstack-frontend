@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import WorkoutSetList from '../components/WorkoutSetList';
 import { authFetch } from '../../../lib/authFetch';
 
 export default function WorkoutDetailPage() {
@@ -87,7 +86,42 @@ export default function WorkoutDetailPage() {
         <p className="text-gray-700 italic">{workout.notes}</p>
       )}
 
-      <WorkoutSetList sets={workout.sets} onRemove={handleRemoveSet} />
+      {/* Grouped sets by movement */}
+      {(() => {
+        const groups = new Map<number, { name: string; sets: any[] }>();
+        for (const set of workout.sets) {
+          const movementId = set.movementId || set.movement?.id;
+          const movementName = set.movement?.name || set.exercise || 'Tuntematon liike';
+          if (!groups.has(movementId)) {
+            groups.set(movementId, { name: movementName, sets: [] });
+          }
+          groups.get(movementId)!.sets.push(set);
+        }
+
+        return Array.from(groups.entries()).map(([movementId, group]) => (
+          <div key={movementId} className="border rounded p-4 space-y-2">
+            <h3 className="font-semibold text-lg">{group.name}</h3>
+            {group.sets.map((set: any) => (
+              <div key={set.id} className="flex justify-between items-center pl-2">
+                <p className="text-sm text-gray-600">
+                  {set.reps} x {set.weight ?? '-'} kg | Int: {set.intensity ?? '-'}
+                  {set.notes && <span className="italic ml-2">— {set.notes}</span>}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idx = workout.sets.indexOf(set);
+                    handleRemoveSet(idx);
+                  }}
+                  className="text-red-600 font-semibold text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        ));
+      })()}
     </div>
   );
 }

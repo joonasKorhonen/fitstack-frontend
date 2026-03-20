@@ -2,37 +2,38 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import WorkoutSetForm from '../components/WorkoutSetForm';
-import WorkoutSetList from '../components/WorkoutSetList';
+import MovementGroupEditor, { SetData } from '../components/MovementGroupEditor';
 import { authFetch } from '../../../lib/authFetch';
 
 export default function CreateWorkoutPage() {
   const router = useRouter();
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [sets, setSets] = useState<any[]>([]);
+  const [sets, setSets] = useState<SetData[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const addSet = (set: any) => setSets([...sets, set]);
-  const removeSet = (index: number) => setSets(sets.filter((_, i) => i !== index));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (sets.length === 0) {
-      alert('Lisää vähintään yksi setti ennen tallennusta');
+      alert('Lisää vähintään yksi sarja ennen tallennusta');
+      return;
+    }
+
+    const incompleteSets = sets.filter(s => !s.reps);
+    if (incompleteSets.length > 0) {
+      alert('Täytä toistot kaikille sarjoille');
       return;
     }
 
     setLoading(true);
 
-    // Transform sets to send movementId
     const transformedSets = sets.map(set => ({
       movementId: set.movementId,
-      reps: set.reps,
-      weight: set.weight,
-      intensity: set.intensity,
-      notes: set.notes,
+      reps: Number(set.reps),
+      weight: set.weight !== '' ? Number(set.weight) : undefined,
+      intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
+      notes: set.notes || undefined,
     }));
 
     const requestBody = { date, notes, sets: transformedSets };
@@ -78,8 +79,7 @@ export default function CreateWorkoutPage() {
           />
         </div>
 
-        <WorkoutSetForm onAdd={addSet} />
-        <WorkoutSetList sets={sets} onRemove={removeSet} />
+        <MovementGroupEditor sets={sets} onChange={setSets} />
 
         <button
           type="submit"

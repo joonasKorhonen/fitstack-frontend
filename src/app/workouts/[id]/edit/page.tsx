@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import WorkoutSetForm from '../../components/WorkoutSetForm';
-import WorkoutSetList from '../../components/WorkoutSetList';
+import MovementGroupEditor, { SetData } from '../../components/MovementGroupEditor';
 import { authFetch } from '../../../../lib/authFetch';
 
 export default function EditWorkoutPage() {
@@ -12,8 +11,7 @@ export default function EditWorkoutPage() {
   const [workout, setWorkout] = useState<any>(null);
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
-  const [editedSets, setEditedSets] = useState<any[]>([]);
-  const [newSets, setNewSets] = useState<any[]>([]);
+  const [editedSets, setEditedSets] = useState<SetData[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -28,44 +26,42 @@ export default function EditWorkoutPage() {
         setNotes(data.notes || '');
         setEditedSets(data.sets.map((s: any) => ({
           id: s.id,
+          movementId: s.movementId || s.movement?.id,
+          movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
           reps: s.reps,
           weight: s.weight ?? '',
           intensity: s.intensity ?? '',
           notes: s.notes ?? '',
-          movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
         })));
       }
     };
     fetchWorkout();
   }, [id, router]);
 
-  const handleEditSet = (index: number, field: string, value: string) => {
-    const updated = [...editedSets];
-    updated[index] = { ...updated[index], [field]: value };
-    setEditedSets(updated);
-  };
-
-  const handleRemoveExistingSet = async (index: number) => {
-    if (!confirm('Poistetaanko tämä sarja?')) return;
-
-    const setToRemove = editedSets[index];
-    const res = await authFetch(`/api/workouts/${id}/sets/${setToRemove.id}`, router, {
-      method: 'DELETE',
-    });
-    if (!res) return;
-
-    if (res.ok) {
-      setEditedSets(editedSets.filter((_, i) => i !== index));
-    } else {
-      alert('Virhe sarjan poistamisessa');
+  const handleRemoveSet = async (set: SetData) => {
+    if (set.id) {
+      if (!confirm('Poistetaanko tämä sarja?')) return;
+      const res = await authFetch(`/api/workouts/${id}/sets/${set.id}`, router, {
+        method: 'DELETE',
+      });
+      if (!res) return;
+      if (!res.ok) {
+        alert('Virhe sarjan poistamisessa');
+        return;
+      }
     }
+    setEditedSets(prev => prev.filter(s => s !== set));
   };
-
-  const addNewSet = (set: any) => setNewSets([...newSets, set]);
-  const removeNewSet = (index: number) => setNewSets(newSets.filter((_, i) => i !== index));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const incompleteSets = editedSets.filter(s => !s.reps);
+    if (incompleteSets.length > 0) {
+      alert('Täytä toistot kaikille sarjoille');
+      return;
+    }
+
     setLoading(true);
 
     // 1. Update date and notes
@@ -76,8 +72,9 @@ export default function EditWorkoutPage() {
     });
     if (!updateRes) return;
 
-    // 2. Update edited existing sets
-    for (const set of editedSets) {
+    // 2. Update existing sets (those with id)
+    const existingSets = editedSets.filter(s => s.id);
+    for (const set of existingSets) {
       await authFetch(`/api/workouts/${id}/sets/${set.id}`, router, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -90,14 +87,15 @@ export default function EditWorkoutPage() {
       });
     }
 
-    // 3. Add new sets if any
+    // 3. Create new sets (those without id)
+    const newSets = editedSets.filter(s => !s.id);
     if (newSets.length > 0) {
       const transformedSets = newSets.map(set => ({
         movementId: set.movementId,
-        reps: set.reps,
-        weight: set.weight,
-        intensity: set.intensity,
-        notes: set.notes,
+        reps: Number(set.reps),
+        weight: set.weight !== '' ? Number(set.weight) : undefined,
+        intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
+        notes: set.notes || undefined,
       }));
 
       await authFetch(`/api/workouts/${id}/sets`, router, {
@@ -144,84 +142,11 @@ export default function EditWorkoutPage() {
           />
         </div>
 
-        {/* Existing sets - editable */}
-        <div>
-          <h2 className="font-semibold text-lg mb-2">Nykyiset sarjat</h2>
-          {editedSets.length > 0 ? (
-            <div className="space-y-2">
-              {editedSets.map((set, i) => (
-                <div key={set.id} className="border p-3 rounded space-y-2">
-                  <div className="flex justify-between items-center">
-                    <p className="font-medium">{set.movementName}</p>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingSet(i)}
-                      className="text-red-600 font-semibold"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    <div>
-                      <label className="text-xs text-gray-500">Toistot</label>
-                      <input
-                        type="number"
-                        value={set.reps}
-                        onChange={(e) => handleEditSet(i, 'reps', e.target.value)}
-                        className="w-full border p-1 rounded text-sm"
-                        min={1}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Paino (kg)</label>
-                      <input
-                        type="number"
-                        value={set.weight}
-                        onChange={(e) => handleEditSet(i, 'weight', e.target.value)}
-                        className="w-full border p-1 rounded text-sm"
-                        min={0}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Intensiteetti</label>
-                      <input
-                        type="number"
-                        value={set.intensity}
-                        onChange={(e) => handleEditSet(i, 'intensity', e.target.value)}
-                        className="w-full border p-1 rounded text-sm"
-                        min={1}
-                        max={10}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500">Muistiinpanot</label>
-                      <input
-                        type="text"
-                        value={set.notes}
-                        onChange={(e) => handleEditSet(i, 'notes', e.target.value)}
-                        className="w-full border p-1 rounded text-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">Ei sarjoja</p>
-          )}
-        </div>
-
-        {/* Add new sets */}
-        <div>
-          <h2 className="font-semibold text-lg mb-2">Lisää uusia sarjoja</h2>
-          <WorkoutSetForm onAdd={addNewSet} />
-          {newSets.length > 0 && (
-            <div className="mt-3">
-              <p className="text-sm text-gray-500 mb-1">Uudet sarjat ({newSets.length}):</p>
-              <WorkoutSetList sets={newSets} onRemove={removeNewSet} />
-            </div>
-          )}
-        </div>
+        <MovementGroupEditor
+          sets={editedSets}
+          onChange={setEditedSets}
+          onRemove={(set) => handleRemoveSet(set)}
+        />
 
         <div className="flex gap-3">
           <button
