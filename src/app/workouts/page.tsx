@@ -46,13 +46,21 @@ export default function WorkoutsPage() {
       </div>
 
       <div className="flex justify-between items-center mt-10">
-        <h1 className="text-3xl font-bold">Treenit 💪</h1>
-        <Link
-          href="/workouts/create"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          + Uusi treeni
-        </Link>
+        <h1 className="text-3xl font-bold">Treenit</h1>
+        <div className="flex gap-2">
+          <Link
+            href="/meals"
+            className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50"
+          >
+            Ateriat
+          </Link>
+          <Link
+            href="/workouts/create"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            + Uusi treeni
+          </Link>
+        </div>
       </div>
 
       {workouts.length === 0 ? (
