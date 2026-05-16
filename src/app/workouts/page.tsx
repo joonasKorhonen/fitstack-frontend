@@ -55,6 +55,12 @@ export default function WorkoutsPage() {
             Ateriat
           </Link>
           <Link
+            href="/profile"
+            className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50"
+          >
+            Profiili
+          </Link>
+          <Link
             href="/workouts/create"
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
