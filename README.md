@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FitStack Frontend
 
-## Getting Started
+FitStack is a personal fitness tracking app. This repo is the Next.js 15 frontend; it talks to a separate FitStack backend (Express/REST) running on `http://localhost:3001`.
 
-First, run the development server:
+The UI is in Finnish.
+
+## Features
+
+- **Authentication** — sign up, log in, JWT access tokens stored in `localStorage`, automatic redirect to `/login` on 401 (see [src/lib/authFetch.ts](src/lib/authFetch.ts)).
+- **Workouts** ([src/app/workouts/](src/app/workouts/)) — list, create, view, and edit workouts. Sets are grouped by movement with inline editing.
+- **Meals** ([src/app/meals/](src/app/meals/)) — CRUD pages for meals.
+- **Profile** ([src/app/profile/](src/app/profile/)) — view username/join date and upload, replace, or remove an avatar (JPEG/PNG/WebP, max 5 MB).
+
+## Tech stack
+
+- [Next.js 15](https://nextjs.org) (App Router) + React 19
+- TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com)
+- [TanStack Query](https://tanstack.com/query) and [axios](https://axios-http.com) for data fetching
+- ESLint (`eslint-config-next`)
+
+## Project layout
+
+```
+src/
+├── app/                # App Router pages
+│   ├── login/          # Login page
+│   ├── signup/         # Signup page
+│   ├── workouts/       # Workouts list, [id], create, components
+│   ├── meals/          # Meals list, [id], create, components
+│   ├── profile/        # Profile + avatar management
+│   ├── api/            # Route handlers (meals, movements, workouts)
+│   ├── layout.tsx
+│   └── page.tsx        # Redirects to /login
+├── components/         # Shared components (LogoutButton, ...)
+├── lib/                # authFetch and other helpers
+└── types/              # Shared TypeScript types
+```
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- The FitStack backend running locally on port 3001
+
+### Setup
+
+```bash
+npm install
+```
+
+Create `.env.local` in the project root:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+### Run the dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). The root path redirects to `/login`; once logged in you land on `/workouts`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script          | Description                  |
+| --------------- | ---------------------------- |
+| `npm run dev`   | Start the dev server         |
+| `npm run build` | Build the production bundle  |
+| `npm run start` | Start the built app          |
+| `npm run lint`  | Run ESLint                   |
