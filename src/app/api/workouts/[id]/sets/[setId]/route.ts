@@ -4,11 +4,11 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:300
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; setId: string } }
+  { params }: { params: Promise<{ id: string; setId: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id, setId } = params;
+    const { id, setId } = await params;
     const body = await request.json();
 
     const response = await fetch(`${BACKEND_URL}/api/workouts/${id}/sets/${setId}`, {
@@ -32,11 +32,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; setId: string } }
+  { params }: { params: Promise<{ id: string; setId: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id, setId } = params;
+    const { id, setId } = await params;
 
     console.log(`API Proxy - DELETE workout ${id} set ${setId}`);
     console.log('API Proxy - Token:', token ? 'Present' : 'Missing');

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Movement } from '@/types/movement';
 import MovementSearch from './MovementSearch';
 
@@ -26,8 +25,6 @@ interface MovementGroupEditorProps {
 }
 
 export default function MovementGroupEditor({ sets, onChange, onRemove }: MovementGroupEditorProps) {
-  const [expandedAdd, setExpandedAdd] = useState<number | null>(null);
-
   // Group sets by movementId
   const groups: MovementGroup[] = [];
   const groupMap = new Map<number, MovementGroup>();
@@ -76,7 +73,6 @@ export default function MovementGroupEditor({ sets, onChange, onRemove }: Moveme
       notes: '',
     };
     onChange([...sets, newSet]);
-    setExpandedAdd(null);
   };
 
   const addMovement = (movement: Movement) => {

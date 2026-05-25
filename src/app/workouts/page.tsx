@@ -6,9 +6,10 @@ import { useRouter } from 'next/navigation';
 import WorkoutCard from './components/WorkoutCard';
 import LogoutButton from '../../components/LogoutButton';
 import { authFetch } from '../../lib/authFetch';
+import { Workout } from '../../types/workout';
 
 export default function WorkoutsPage() {
-  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -25,8 +26,8 @@ export default function WorkoutsPage() {
 
         const data = await res.json();
         setWorkouts(data);
-      } catch (error: any) {
-        setError(error.message || 'Tuntematon virhe');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Tuntematon virhe');
       } finally {
         setLoading(false);
       }

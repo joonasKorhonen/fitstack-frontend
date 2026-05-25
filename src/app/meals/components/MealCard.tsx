@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { Meal } from '../../../types/meal';
 
-export default function MealCard({ meal }: { meal: any }) {
+export default function MealCard({ meal }: { meal: Meal }) {
   return (
     <Link href={`/meals/${meal.id}`}>
       <div className="border rounded p-4 hover:shadow transition cursor-pointer">

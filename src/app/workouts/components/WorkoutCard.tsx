@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { Workout } from '../../../types/workout';
 
-export default function WorkoutCard({ workout }: { workout: any }) {
+export default function WorkoutCard({ workout }: { workout: Workout }) {
   return (
     <Link
       href={`/workouts/${workout.id}`}

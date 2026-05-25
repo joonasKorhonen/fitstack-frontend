@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { authFetch } from '../../../lib/authFetch';
+import { Workout, WorkoutSet } from '../../../types/workout';
 
 export default function WorkoutDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [workout, setWorkout] = useState<any>(null);
+  const [workout, setWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     const fetchWorkout = async () => {
@@ -36,17 +37,18 @@ export default function WorkoutDetailPage() {
   };
 
   const handleRemoveSet = async (index: number) => {
+    if (!workout) return;
     if (!confirm('Poistetaanko tämä setti?')) return;
 
-    const setToRemove = workout.sets[index];
-    const setId = setToRemove.id;
+    const setId = workout.sets[index].id;
 
     const res = await authFetch(`/api/workouts/${id}/sets/${setId}`, router, { method: 'DELETE' });
     if (!res) return;
 
     if (res.ok) {
-      const updatedSets = workout.sets.filter((_: any, i: number) => i !== index);
-      setWorkout({ ...workout, sets: updatedSets });
+      setWorkout((prev) =>
+        prev ? { ...prev, sets: prev.sets.filter((_, i) => i !== index) } : prev,
+      );
     } else {
       alert('Virhe setin poistamisessa');
     }
@@ -88,9 +90,9 @@ export default function WorkoutDetailPage() {
 
       {/* Grouped sets by movement */}
       {(() => {
-        const groups = new Map<number, { name: string; sets: any[] }>();
+        const groups = new Map<number, { name: string; sets: WorkoutSet[] }>();
         for (const set of workout.sets) {
-          const movementId = set.movementId || set.movement?.id;
+          const movementId = set.movementId ?? set.movement?.id ?? 0;
           const movementName = set.movement?.name || set.exercise || 'Tuntematon liike';
           if (!groups.has(movementId)) {
             groups.set(movementId, { name: movementName, sets: [] });
@@ -101,7 +103,7 @@ export default function WorkoutDetailPage() {
         return Array.from(groups.entries()).map(([movementId, group]) => (
           <div key={movementId} className="border rounded p-4 space-y-2">
             <h3 className="font-semibold text-lg">{group.name}</h3>
-            {group.sets.map((set: any) => (
+            {group.sets.map((set) => (
               <div key={set.id} className="flex justify-between items-center pl-2">
                 <p className="text-sm text-gray-600">
                   {set.reps} x {set.weight ?? '-'} kg | Int: {set.intensity ?? '-'}

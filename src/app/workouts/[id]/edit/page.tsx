@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MovementGroupEditor, { SetData } from '../../components/MovementGroupEditor';
 import { authFetch } from '../../../../lib/authFetch';
+import { Workout, WorkoutSet } from '../../../../types/workout';
 
 export default function EditWorkoutPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [workout, setWorkout] = useState<any>(null);
+  const [workout, setWorkout] = useState<Workout | null>(null);
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
   const [editedSets, setEditedSets] = useState<SetData[]>([]);
@@ -20,13 +21,13 @@ export default function EditWorkoutPage() {
       if (!res) return;
 
       if (res.ok) {
-        const data = await res.json();
+        const data: Workout = await res.json();
         setWorkout(data);
         setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : '');
         setNotes(data.notes || '');
-        setEditedSets(data.sets.map((s: any) => ({
+        setEditedSets(data.sets.map((s: WorkoutSet) => ({
           id: s.id,
-          movementId: s.movementId || s.movement?.id,
+          movementId: s.movementId ?? s.movement?.id ?? 0,
           movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
           reps: s.reps,
           weight: s.weight ?? '',

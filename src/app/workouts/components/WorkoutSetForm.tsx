@@ -3,7 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { Movement } from '@/types/movement';
 
-export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void }) {
+export interface NewWorkoutSet {
+  movementId?: number;
+  movementName: string;
+  reps: number;
+  weight?: number;
+  intensity?: number;
+  notes?: string;
+}
+
+export default function WorkoutSetForm({ onAdd }: { onAdd: (set: NewWorkoutSet) => void }) {
   const [movements, setMovements] = useState<Movement[]>([]);
   const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -120,7 +129,7 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
       return alert('Lisää toistot');
     }
 
-    const newSet: any = {
+    const newSet: NewWorkoutSet = {
       movementId: selectedMovement?.id,
       movementName: selectedMovement?.name || searchTerm,
       reps: Number(reps),
@@ -197,7 +206,7 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: any) => void })
                     <span>Luodaan...</span>
                   ) : (
                     <>
-                      <span>+ Lisää "{searchTerm}"</span>
+                      <span>+ Lisää &quot;{searchTerm}&quot;</span>
                     </>
                   )}
                 </div>

@@ -4,11 +4,11 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:300
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const response = await fetch(`${BACKEND_URL}/api/workouts/${id}/sets`, {

@@ -1,10 +1,14 @@
 'use client';
 
+import { WorkoutSet } from '../../../types/workout';
+
+type DisplaySet = WorkoutSet & { movementName?: string };
+
 export default function WorkoutSetList({
   sets,
   onRemove,
 }: {
-  sets: any[];
+  sets: DisplaySet[];
   onRemove: (index: number) => void;
 }) {
   if (sets.length === 0)

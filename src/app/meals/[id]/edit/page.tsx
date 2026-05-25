@@ -45,15 +45,15 @@ export default function EditMealPage() {
 
     setLoading(true);
 
-    const body: any = {
+    const body = {
       title,
       calories: Number(calories),
+      ...(date && { date }),
+      ...(protein && { protein: Number(protein) }),
+      ...(carbs && { carbs: Number(carbs) }),
+      ...(fat && { fat: Number(fat) }),
+      notes: notes || null,
     };
-    if (date) body.date = date;
-    if (protein) body.protein = Number(protein);
-    if (carbs) body.carbs = Number(carbs);
-    if (fat) body.fat = Number(fat);
-    body.notes = notes || null;
 
     const res = await authFetch(`/api/meals/${id}`, router, {
       method: 'PATCH',

@@ -4,11 +4,11 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:300
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id } = params;
+    const { id } = await params;
 
     console.log(`API Proxy - GET workout ${id}`);
     console.log('API Proxy - Token:', token ? 'Present' : 'Missing');
@@ -36,11 +36,11 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id } = params;
+    const { id } = await params;
 
     console.log(`API Proxy - DELETE workout ${id}`);
     console.log('API Proxy - Token:', token ? 'Present' : 'Missing');
@@ -55,9 +55,7 @@ export async function DELETE(
 
     console.log(`API Proxy - Backend response status for DELETE workout ${id}:`, response.status);
 
-    const data = await response.json().catch((err) => {
-      return { message: 'Deleted successfully' };
-    });
+    const data = await response.json().catch(() => ({ message: 'Deleted successfully' }));
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
@@ -71,11 +69,11 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.headers.get('authorization');
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     console.log(`API Proxy - PATCH workout ${id}`);

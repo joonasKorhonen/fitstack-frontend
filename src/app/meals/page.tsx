@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MealCard from './components/MealCard';
 import { authFetch } from '../../lib/authFetch';
+import { Meal } from '../../types/meal';
 
 export default function MealsPage() {
-  const [meals, setMeals] = useState<any[]>([]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 

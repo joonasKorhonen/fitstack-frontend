@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     });
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to fetch meals' },
       { status: 500 }
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     });
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Failed to create meal' },
       { status: 500 }

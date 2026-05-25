@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { authFetch } from '../../../lib/authFetch';
+import { Meal } from '../../../types/meal';
 
 export default function MealDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [meal, setMeal] = useState<any>(null);
+  const [meal, setMeal] = useState<Meal | null>(null);
 
   useEffect(() => {
     const fetchMeal = async () => {
