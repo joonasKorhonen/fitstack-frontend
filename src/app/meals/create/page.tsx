@@ -3,36 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../../lib/authFetch';
+import MealForm, { MealFormValues, emptyMealFormValues } from '../components/MealForm';
 
 export default function CreateMealPage() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [calories, setCalories] = useState('');
-  const [date, setDate] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carbs, setCarbs] = useState('');
-  const [fat, setFat] = useState('');
-  const [notes, setNotes] = useState('');
+  const [values, setValues] = useState<MealFormValues>(emptyMealFormValues);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!title || !calories) {
-      alert('Nimi ja kalorit ovat pakollisia');
-      return;
-    }
-
+  const handleSubmit = async () => {
     setLoading(true);
 
     const body = {
-      title,
-      calories: Number(calories),
-      ...(date && { date }),
-      ...(protein && { protein: Number(protein) }),
-      ...(carbs && { carbs: Number(carbs) }),
-      ...(fat && { fat: Number(fat) }),
-      ...(notes && { notes }),
+      title: values.title,
+      calories: Number(values.calories),
+      ...(values.date && { date: values.date }),
+      ...(values.protein && { protein: Number(values.protein) }),
+      ...(values.carbs && { carbs: Number(values.carbs) }),
+      ...(values.fat && { fat: Number(values.fat) }),
+      ...(values.notes && { notes: values.notes }),
     };
 
     const res = await authFetch('/api/meals', router, {
@@ -61,90 +49,14 @@ export default function CreateMealPage() {
 
       <h1 className="text-2xl font-bold mb-6">Uusi ateria</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block font-medium">Nimi *</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border p-2 rounded"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium">Kalorit (kcal) *</label>
-          <input
-            type="number"
-            value={calories}
-            onChange={(e) => setCalories(e.target.value)}
-            className="w-full border p-2 rounded"
-            min={0}
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium">Päivämäärä</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <label className="block font-medium">Proteiini (g)</label>
-            <input
-              type="number"
-              value={protein}
-              onChange={(e) => setProtein(e.target.value)}
-              className="w-full border p-2 rounded"
-              min={0}
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Hiilihydraatit (g)</label>
-            <input
-              type="number"
-              value={carbs}
-              onChange={(e) => setCarbs(e.target.value)}
-              className="w-full border p-2 rounded"
-              min={0}
-            />
-          </div>
-          <div>
-            <label className="block font-medium">Rasva (g)</label>
-            <input
-              type="number"
-              value={fat}
-              onChange={(e) => setFat(e.target.value)}
-              className="w-full border p-2 rounded"
-              min={0}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block font-medium">Muistiinpanot</label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full border p-2 rounded"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {loading ? 'Tallennetaan...' : 'Tallenna ateria'}
-        </button>
-      </form>
+      <MealForm
+        values={values}
+        onChange={setValues}
+        onSubmit={handleSubmit}
+        submitLabel="Tallenna ateria"
+        submittingLabel="Tallennetaan..."
+        loading={loading}
+      />
     </div>
   );
 }
