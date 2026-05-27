@@ -1,32 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import MealCard from './components/MealCard';
-import { authFetch } from '../../lib/authFetch';
-import { Meal } from '../../types/meal';
+import { useMeals } from '../../hooks/meals';
 
 export default function MealsPage() {
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const { data: meals, isLoading, error } = useMeals();
 
-  useEffect(() => {
-    const fetchMeals = async () => {
-      const res = await authFetch('/api/meals', router);
-      if (!res) return;
-
-      if (res.ok) {
-        const data = await res.json();
-        setMeals(data);
-      }
-      setLoading(false);
-    };
-    fetchMeals();
-  }, [router]);
-
-  if (loading) return <p className="p-6 text-center">Ladataan aterioita...</p>;
+  if (isLoading) return <p className="p-6 text-center">Ladataan aterioita...</p>;
+  if (error) return <p className="p-6 text-center text-red-500">Virhe aterioiden haussa</p>;
 
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6">
@@ -54,7 +36,7 @@ export default function MealsPage() {
         </div>
       </div>
 
-      {meals.length === 0 ? (
+      {!meals || meals.length === 0 ? (
         <p className="text-gray-600 text-center">Ei vielä aterioita. Lisää ensimmäinen!</p>
       ) : (
         <div className="grid gap-3">

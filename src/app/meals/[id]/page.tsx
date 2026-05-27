@@ -1,41 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { authFetch } from '../../../lib/authFetch';
-import { Meal } from '../../../types/meal';
+import { useMeal, useDeleteMeal } from '../../../hooks/meals';
 
 export default function MealDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [meal, setMeal] = useState<Meal | null>(null);
+  const { data: meal, isLoading } = useMeal(id);
+  const deleteMeal = useDeleteMeal();
 
-  useEffect(() => {
-    const fetchMeal = async () => {
-      const res = await authFetch(`/api/meals/${id}`, router);
-      if (!res) return;
-
-      if (res.ok) {
-        setMeal(await res.json());
-      }
-    };
-    fetchMeal();
-  }, [id, router]);
-
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!confirm('Poistetaanko tämä ateria?')) return;
-
-    const res = await authFetch(`/api/meals/${id}`, router, { method: 'DELETE' });
-    if (!res) return;
-
-    if (res.ok) {
-      router.push('/meals');
-    } else {
-      alert('Virhe aterian poistamisessa');
-    }
+    deleteMeal.mutate(id, {
+      onSuccess: () => router.push('/meals'),
+      onError: () => alert('Virhe aterian poistamisessa'),
+    });
   };
 
-  if (!meal) return <p className="p-6">Ladataan...</p>;
+  if (isLoading || !meal) return <p className="p-6">Ladataan...</p>;
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-4">
@@ -57,7 +39,8 @@ export default function MealDetailPage() {
           </button>
           <button
             onClick={handleDelete}
-            className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded"
+            disabled={deleteMeal.isPending}
+            className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded disabled:opacity-50"
           >
             Poista
           </button>

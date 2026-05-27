@@ -2,18 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authFetch } from '../../../lib/authFetch';
 import MealForm, { MealFormValues, emptyMealFormValues } from '../components/MealForm';
+import { useCreateMeal, MealInput } from '../../../hooks/meals';
 
 export default function CreateMealPage() {
   const router = useRouter();
   const [values, setValues] = useState<MealFormValues>(emptyMealFormValues);
-  const [loading, setLoading] = useState(false);
+  const createMeal = useCreateMeal();
 
-  const handleSubmit = async () => {
-    setLoading(true);
-
-    const body = {
+  const handleSubmit = () => {
+    const input: MealInput = {
       title: values.title,
       calories: Number(values.calories),
       ...(values.date && { date: values.date }),
@@ -23,19 +21,10 @@ export default function CreateMealPage() {
       ...(values.notes && { notes: values.notes }),
     };
 
-    const res = await authFetch('/api/meals', router, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+    createMeal.mutate(input, {
+      onSuccess: () => router.push('/meals'),
+      onError: () => alert('Virhe aterian tallennuksessa'),
     });
-
-    setLoading(false);
-
-    if (res && res.ok) {
-      router.push('/meals');
-    } else {
-      alert('Virhe aterian tallennuksessa');
-    }
   };
 
   return (
@@ -55,7 +44,7 @@ export default function CreateMealPage() {
         onSubmit={handleSubmit}
         submitLabel="Tallenna ateria"
         submittingLabel="Tallennetaan..."
-        loading={loading}
+        loading={createMeal.isPending}
       />
     </div>
   );

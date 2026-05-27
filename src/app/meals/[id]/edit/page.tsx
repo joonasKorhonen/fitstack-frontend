@@ -2,40 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { authFetch } from '../../../../lib/authFetch';
 import MealForm, { MealFormValues, emptyMealFormValues } from '../../components/MealForm';
+import { useMeal, useUpdateMeal, MealInput } from '../../../../hooks/meals';
 
 export default function EditMealPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { data: meal } = useMeal(id);
+  const updateMeal = useUpdateMeal(id);
   const [values, setValues] = useState<MealFormValues>(emptyMealFormValues);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMeal = async () => {
-      const res = await authFetch(`/api/meals/${id}`, router);
-      if (!res) return;
+    if (!meal) return;
+    setValues({
+      title: meal.title,
+      calories: String(meal.calories),
+      date: meal.date ? new Date(meal.date).toISOString().split('T')[0] : '',
+      protein: meal.protein != null ? String(meal.protein) : '',
+      carbs: meal.carbs != null ? String(meal.carbs) : '',
+      fat: meal.fat != null ? String(meal.fat) : '',
+      notes: meal.notes || '',
+    });
+  }, [meal]);
 
-      if (res.ok) {
-        const data = await res.json();
-        setValues({
-          title: data.title,
-          calories: String(data.calories),
-          date: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
-          protein: data.protein != null ? String(data.protein) : '',
-          carbs: data.carbs != null ? String(data.carbs) : '',
-          fat: data.fat != null ? String(data.fat) : '',
-          notes: data.notes || '',
-        });
-      }
-    };
-    fetchMeal();
-  }, [id, router]);
-
-  const handleSave = async () => {
-    setLoading(true);
-
-    const body = {
+  const handleSave = () => {
+    const input: MealInput = {
       title: values.title,
       calories: Number(values.calories),
       ...(values.date && { date: values.date }),
@@ -45,19 +36,10 @@ export default function EditMealPage() {
       notes: values.notes || null,
     };
 
-    const res = await authFetch(`/api/meals/${id}`, router, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+    updateMeal.mutate(input, {
+      onSuccess: () => router.push(`/meals/${id}`),
+      onError: () => alert('Virhe aterian päivityksessä'),
     });
-
-    setLoading(false);
-
-    if (res && res.ok) {
-      router.push(`/meals/${id}`);
-    } else {
-      alert('Virhe aterian päivityksessä');
-    }
   };
 
   return (
@@ -78,7 +60,7 @@ export default function EditMealPage() {
         onCancel={() => router.push(`/meals/${id}`)}
         submitLabel="Tallenna muutokset"
         submittingLabel="Tallennetaan..."
-        loading={loading}
+        loading={updateMeal.isPending}
       />
     </div>
   );
