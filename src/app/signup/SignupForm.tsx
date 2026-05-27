@@ -4,6 +4,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_URL } from '../../lib/apiFetch';
+import { endpoints } from '../../lib/endpoints';
 
 export default function SignupForm() {
   const [username, setUsername] = useState('');
@@ -48,7 +50,7 @@ export default function SignupForm() {
     setLoading(true);
 
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/register', {
+      const res = await axios.post(`${API_URL}${endpoints.auth.register}`, {
         username,
         password
       });

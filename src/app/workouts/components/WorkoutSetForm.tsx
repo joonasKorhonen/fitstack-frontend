@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Movement } from '@/types/movement';
+import { apiFetch, ApiError } from '@/lib/apiFetch';
+import { endpoints } from '@/lib/endpoints';
 
 export interface NewWorkoutSet {
   movementId?: number;
@@ -13,6 +16,7 @@ export interface NewWorkoutSet {
 }
 
 export default function WorkoutSetForm({ onAdd }: { onAdd: (set: NewWorkoutSet) => void }) {
+  const router = useRouter();
   const [movements, setMovements] = useState<Movement[]>([]);
   const [selectedMovement, setSelectedMovement] = useState<Movement | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +33,7 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: NewWorkoutSet) 
   // Fetch movements on mount
   useEffect(() => {
     fetchMovements();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Close dropdown when clicking outside
@@ -44,53 +49,30 @@ export default function WorkoutSetForm({ onAdd }: { onAdd: (set: NewWorkoutSet) 
   }, []);
 
   const fetchMovements = async () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return;
-
     try {
-      const res = await fetch('/api/movements', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMovements(data);
-      }
+      const data = await apiFetch<Movement[]>(endpoints.movements.list, router);
+      setMovements(data);
     } catch (error) {
       console.error('Failed to fetch movements:', error);
     }
   };
 
   const createMovement = async (name: string): Promise<Movement | null> => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return null;
-
     try {
-      const res = await fetch('/api/movements', {
+      const newMovement = await apiFetch<Movement>(endpoints.movements.list, router, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name }),
       });
-
-      if (res.ok) {
-        const newMovement = await res.json();
-        setMovements([...movements, newMovement]);
-        return newMovement;
-      } else {
-        const error = await res.json();
-        if (error.message?.includes('already exists')) {
-          // Movement already exists, find it in the list
-          const existing = movements.find(m => m.name.toLowerCase() === name.toLowerCase());
-          return existing || null;
-        }
-        alert('Virhe luotaessa liikettä: ' + (error.message || 'Tuntematon virhe'));
-        return null;
-      }
+      setMovements([...movements, newMovement]);
+      return newMovement;
     } catch (error) {
+      if (error instanceof ApiError && error.message.includes('already exists')) {
+        const existing = movements.find(m => m.name.toLowerCase() === name.toLowerCase());
+        return existing || null;
+      }
       console.error('Failed to create movement:', error);
-      alert('Virhe luotaessa liikettä');
+      alert('Virhe luotaessa liikettä: ' + (error instanceof Error ? error.message : 'Tuntematon virhe'));
       return null;
     }
   };

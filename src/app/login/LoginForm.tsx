@@ -4,6 +4,8 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_URL } from '../../lib/apiFetch';
+import { endpoints } from '../../lib/endpoints';
 
 export default function LoginForm() {
   const [username, setUserName] = useState('');
@@ -16,7 +18,7 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/login', {
+      const res = await axios.post(`${API_URL}${endpoints.auth.login}`, {
         username,
         password
       });

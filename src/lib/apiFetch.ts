@@ -1,6 +1,8 @@
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { authFetch } from './authFetch';
 
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 export class UnauthenticatedError extends Error {
   constructor() {
     super('Unauthenticated');
@@ -18,10 +20,11 @@ export class ApiError extends Error {
 }
 
 export async function apiFetch<T>(
-  url: string,
+  path: string,
   router: AppRouterInstance,
   options?: RequestInit,
 ): Promise<T> {
+  const url = path.startsWith('http') ? path : `${API_URL}${path}`;
   const res = await authFetch(url, router, options);
   if (!res) throw new UnauthenticatedError();
 

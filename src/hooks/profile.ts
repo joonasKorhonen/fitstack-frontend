@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '../lib/apiFetch';
+import { endpoints } from '../lib/endpoints';
 
 export type UserProfile = {
   id: string;
@@ -15,14 +16,11 @@ export const profileKeys = {
   current: ['profile'] as const,
 };
 
-const PROFILE_URL = 'http://localhost:3001/api/users/profile';
-const AVATAR_URL = 'http://localhost:3001/api/users/avatar';
-
 export function useProfile() {
   const router = useRouter();
   return useQuery({
     queryKey: profileKeys.current,
-    queryFn: () => apiFetch<UserProfile>(PROFILE_URL, router),
+    queryFn: () => apiFetch<UserProfile>(endpoints.users.profile, router),
   });
 }
 
@@ -33,7 +31,7 @@ export function useUploadAvatar() {
     mutationFn: (file: File) => {
       const formData = new FormData();
       formData.append('file', file);
-      return apiFetch<UserProfile>(AVATAR_URL, router, {
+      return apiFetch<UserProfile>(endpoints.users.avatar, router, {
         method: 'POST',
         body: formData,
       });
@@ -49,7 +47,7 @@ export function useRemoveAvatar() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      apiFetch<UserProfile>(AVATAR_URL, router, { method: 'DELETE' }),
+      apiFetch<UserProfile>(endpoints.users.avatar, router, { method: 'DELETE' }),
     onSuccess: (updated) => {
       qc.setQueryData(profileKeys.current, updated);
     },

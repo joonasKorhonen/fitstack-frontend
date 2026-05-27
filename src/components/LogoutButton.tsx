@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { API_URL } from "../lib/apiFetch";
+import { endpoints } from "../lib/endpoints";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -11,7 +13,7 @@ export default function LogoutButton() {
 
     if (refreshToken) {
       try {
-        await axios.post("http://localhost:3001/api/auth/logout", {
+        await axios.post(`${API_URL}${endpoints.auth.logout}`, {
           refreshToken,
         });
       } catch {
