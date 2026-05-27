@@ -1,43 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import WorkoutCard from './components/WorkoutCard';
 import LogoutButton from '../../components/LogoutButton';
-import { authFetch } from '../../lib/authFetch';
-import { Workout } from '../../types/workout';
+import { useWorkouts } from '../../hooks/workouts';
 
 export default function WorkoutsPage() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const { data: workouts, isLoading, error } = useWorkouts();
 
-  useEffect(() => {
-    const fetchWorkouts = async () => {
-      try {
-        const res = await authFetch('http://localhost:3001/api/workouts', router);
-        if (!res) return;
-
-        if (!res.ok) {
-          throw new Error('Virhe haettaessa treenejä');
-        }
-
-        const data = await res.json();
-        setWorkouts(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Tuntematon virhe');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWorkouts();
-  }, [router]);
-
-  if (loading) return <p className="p-6 text-center">Ladataan treenejä...</p>;
-  if (error) return <p className="p-6 text-center text-red-500">{error}</p>;
+  if (isLoading) return <p className="p-6 text-center">Ladataan treenejä...</p>;
+  if (error) {
+    return (
+      <p className="p-6 text-center text-red-500">
+        {error instanceof Error ? error.message : 'Virhe haettaessa treenejä'}
+      </p>
+    );
+  }
 
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6 relative">
@@ -70,7 +48,7 @@ export default function WorkoutsPage() {
         </div>
       </div>
 
-      {workouts.length === 0 ? (
+      {!workouts || workouts.length === 0 ? (
         <p className="text-gray-600 text-center">Ei vielä treenejä. Luo ensimmäinen!</p>
       ) : (
         <div className="grid gap-3">

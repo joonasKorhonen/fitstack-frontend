@@ -3,41 +3,34 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WorkoutForm, { WorkoutFormValues, emptyWorkoutFormValues } from '../components/WorkoutForm';
-import { authFetch } from '../../../lib/authFetch';
+import { useCreateWorkout, CreateWorkoutInput } from '../../../hooks/workouts';
 
 export default function CreateWorkoutPage() {
   const router = useRouter();
   const [values, setValues] = useState<WorkoutFormValues>(emptyWorkoutFormValues);
-  const [loading, setLoading] = useState(false);
+  const createWorkout = useCreateWorkout();
 
-  const handleSubmit = async () => {
-    setLoading(true);
+  const handleSubmit = () => {
+    const input: CreateWorkoutInput = {
+      date: values.date,
+      notes: values.notes,
+      sets: values.sets.map((set) => ({
+        movementId: set.movementId,
+        reps: Number(set.reps),
+        weight: set.weight !== '' ? Number(set.weight) : undefined,
+        intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
+        notes: set.notes || undefined,
+      })),
+    };
 
-    const transformedSets = values.sets.map((set) => ({
-      movementId: set.movementId,
-      reps: Number(set.reps),
-      weight: set.weight !== '' ? Number(set.weight) : undefined,
-      intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
-      notes: set.notes || undefined,
-    }));
-
-    const requestBody = { date: values.date, notes: values.notes, sets: transformedSets };
-
-    const res = await authFetch('/api/workouts', router, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+    createWorkout.mutate(input, {
+      onSuccess: () => router.push('/workouts'),
+      onError: (err) =>
+        alert(
+          'Virhe tallennuksessa: ' +
+            (err instanceof Error ? err.message : 'Tuntematon virhe'),
+        ),
     });
-
-    setLoading(false);
-    if (!res) return;
-
-    if (res.ok) {
-      router.push('/workouts');
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      alert('Virhe tallennuksessa: ' + (errorData.message || errorData.error || 'Tuntematon virhe'));
-    }
   };
 
   return (
@@ -50,7 +43,7 @@ export default function CreateWorkoutPage() {
         onSubmit={handleSubmit}
         submitLabel="Tallenna treeni"
         submittingLabel="Tallennetaan..."
-        loading={loading}
+        loading={createWorkout.isPending}
         requireSets
       />
     </div>

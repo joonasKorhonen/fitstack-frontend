@@ -1,37 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import LogoutButton from '../../components/LogoutButton';
-import AvatarUploader, { UserProfile } from '../../components/AvatarUploader';
-import { authFetch } from '../../lib/authFetch';
+import AvatarUploader from '../../components/AvatarUploader';
+import { useProfile } from '../../hooks/profile';
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const { data: profile, isLoading, error } = useProfile();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await authFetch('http://localhost:3001/api/users/profile', router);
-        if (!res) return;
-        if (!res.ok) throw new Error('Virhe haettaessa profiilia');
-        const data: UserProfile = await res.json();
-        setProfile(data);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Tuntematon virhe');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProfile();
-  }, [router]);
-
-  if (loading) return <p className="p-6 text-center">Ladataan profiilia...</p>;
-  if (!profile) return <p className="p-6 text-center text-red-500">{error ?? 'Profiilia ei löytynyt'}</p>;
+  if (isLoading) return <p className="p-6 text-center">Ladataan profiilia...</p>;
+  if (!profile) {
+    return (
+      <p className="p-6 text-center text-red-500">
+        {error instanceof Error ? error.message : 'Profiilia ei löytynyt'}
+      </p>
+    );
+  }
 
   return (
     <main className="max-w-3xl mx-auto p-6 space-y-6 relative">
@@ -57,7 +41,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <AvatarUploader profile={profile} onProfileUpdated={setProfile} />
+      <AvatarUploader profile={profile} />
     </main>
   );
 }

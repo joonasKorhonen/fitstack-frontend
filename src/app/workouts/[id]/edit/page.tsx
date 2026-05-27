@@ -4,50 +4,45 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import WorkoutForm, { WorkoutFormValues, emptyWorkoutFormValues } from '../../components/WorkoutForm';
 import { SetData } from '../../components/MovementGroupEditor';
-import { authFetch } from '../../../../lib/authFetch';
-import { Workout, WorkoutSet } from '../../../../types/workout';
+import {
+  useWorkout,
+  useSaveWorkoutEdits,
+  useDeleteWorkoutSet,
+} from '../../../../hooks/workouts';
+import { WorkoutSet } from '../../../../types/workout';
 
 export default function EditWorkoutPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const { data: workout } = useWorkout(id);
+  const saveEdits = useSaveWorkoutEdits(id);
+  const deleteSet = useDeleteWorkoutSet(id);
+
   const [values, setValues] = useState<WorkoutFormValues>(emptyWorkoutFormValues);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchWorkout = async () => {
-      const res = await authFetch(`/api/workouts/${id}`, router);
-      if (!res) return;
-
-      if (res.ok) {
-        const data: Workout = await res.json();
-        setWorkout(data);
-        setValues({
-          date: data.date ? new Date(data.date).toISOString().split('T')[0] : '',
-          notes: data.notes || '',
-          sets: data.sets.map((s: WorkoutSet) => ({
-            id: s.id,
-            movementId: s.movementId ?? s.movement?.id ?? 0,
-            movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
-            reps: s.reps,
-            weight: s.weight ?? '',
-            intensity: s.intensity ?? '',
-            notes: s.notes ?? '',
-          })),
-        });
-      }
-    };
-    fetchWorkout();
-  }, [id, router]);
+    if (!workout) return;
+    setValues({
+      date: workout.date ? new Date(workout.date).toISOString().split('T')[0] : '',
+      notes: workout.notes || '',
+      sets: workout.sets.map((s: WorkoutSet) => ({
+        id: s.id,
+        movementId: s.movementId ?? s.movement?.id ?? 0,
+        movementName: s.movement?.name || s.exercise || 'Tuntematon liike',
+        reps: s.reps,
+        weight: s.weight ?? '',
+        intensity: s.intensity ?? '',
+        notes: s.notes ?? '',
+      })),
+    });
+  }, [workout]);
 
   const handleRemoveSet = async (set: SetData) => {
     if (set.id) {
       if (!confirm('Poistetaanko tämä sarja?')) return;
-      const res = await authFetch(`/api/workouts/${id}/sets/${set.id}`, router, {
-        method: 'DELETE',
-      });
-      if (!res) return;
-      if (!res.ok) {
+      try {
+        await deleteSet.mutateAsync(set.id);
+      } catch {
         alert('Virhe sarjan poistamisessa');
         return;
       }
@@ -55,36 +50,22 @@ export default function EditWorkoutPage() {
     setValues((prev) => ({ ...prev, sets: prev.sets.filter((s) => s !== set) }));
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-
-    // 1. Update date and notes
-    const updateRes = await authFetch(`/api/workouts/${id}`, router, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: values.date, notes: values.notes }),
-    });
-    if (!updateRes) return;
-
-    // 2. Update existing sets (those with id)
-    const existingSets = values.sets.filter((s) => s.id);
-    for (const set of existingSets) {
-      await authFetch(`/api/workouts/${id}/sets/${set.id}`, router, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+  const handleSave = () => {
+    const setUpdates = values.sets
+      .filter((s) => s.id)
+      .map((set) => ({
+        setId: set.id!,
+        data: {
           reps: Number(set.reps),
           weight: set.weight !== '' ? Number(set.weight) : undefined,
           intensity: set.intensity !== '' ? Number(set.intensity) : undefined,
           notes: set.notes || undefined,
-        }),
-      });
-    }
+        },
+      }));
 
-    // 3. Create new sets (those without id)
-    const newSets = values.sets.filter((s) => !s.id);
-    if (newSets.length > 0) {
-      const transformedSets = newSets.map((set) => ({
+    const newSets = values.sets
+      .filter((s) => !s.id)
+      .map((set) => ({
         movementId: set.movementId,
         reps: Number(set.reps),
         weight: set.weight !== '' ? Number(set.weight) : undefined,
@@ -92,15 +73,17 @@ export default function EditWorkoutPage() {
         notes: set.notes || undefined,
       }));
 
-      await authFetch(`/api/workouts/${id}/sets`, router, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sets: transformedSets }),
-      });
-    }
-
-    setLoading(false);
-    router.push(`/workouts/${id}`);
+    saveEdits.mutate(
+      { meta: { date: values.date, notes: values.notes }, setUpdates, newSets },
+      {
+        onSuccess: () => router.push(`/workouts/${id}`),
+        onError: (err) =>
+          alert(
+            'Virhe tallennuksessa: ' +
+              (err instanceof Error ? err.message : 'Tuntematon virhe'),
+          ),
+      },
+    );
   };
 
   if (!workout) return <p className="p-6">Ladataan...</p>;
@@ -124,7 +107,7 @@ export default function EditWorkoutPage() {
         onRemoveSet={handleRemoveSet}
         submitLabel="Tallenna muutokset"
         submittingLabel="Tallennetaan..."
-        loading={loading}
+        loading={saveEdits.isPending}
       />
     </div>
   );

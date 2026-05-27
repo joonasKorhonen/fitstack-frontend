@@ -1,57 +1,33 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { authFetch } from '../../../lib/authFetch';
-import { Workout, WorkoutSet } from '../../../types/workout';
+import { WorkoutSet } from '../../../types/workout';
+import { useWorkout, useDeleteWorkout, useDeleteWorkoutSet } from '../../../hooks/workouts';
 
 export default function WorkoutDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const { data: workout } = useWorkout(id);
+  const deleteWorkout = useDeleteWorkout();
+  const deleteSet = useDeleteWorkoutSet(id);
 
-  useEffect(() => {
-    const fetchWorkout = async () => {
-      const res = await authFetch(`/api/workouts/${id}`, router);
-      if (!res) return;
-
-      if (res.ok) {
-        setWorkout(await res.json());
-      }
-    };
-    fetchWorkout();
-  }, [id, router]);
-
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!confirm('Poistetaanko tämä treeni?')) return;
-
-    const res = await authFetch(`/api/workouts/${id}`, router, { method: 'DELETE' });
-    if (!res) return;
-
-    if (res.ok) {
-      router.push('/workouts');
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      alert('Virhe treenin poistamisessa: ' + (errorData.error || errorData.message || 'Tuntematon virhe'));
-    }
+    deleteWorkout.mutate(id, {
+      onSuccess: () => router.push('/workouts'),
+      onError: (err) =>
+        alert(
+          'Virhe treenin poistamisessa: ' +
+            (err instanceof Error ? err.message : 'Tuntematon virhe'),
+        ),
+    });
   };
 
-  const handleRemoveSet = async (index: number) => {
-    if (!workout) return;
+  const handleRemoveSet = (setId: number) => {
     if (!confirm('Poistetaanko tämä setti?')) return;
-
-    const setId = workout.sets[index].id;
-
-    const res = await authFetch(`/api/workouts/${id}/sets/${setId}`, router, { method: 'DELETE' });
-    if (!res) return;
-
-    if (res.ok) {
-      setWorkout((prev) =>
-        prev ? { ...prev, sets: prev.sets.filter((_, i) => i !== index) } : prev,
-      );
-    } else {
-      alert('Virhe setin poistamisessa');
-    }
+    deleteSet.mutate(setId, {
+      onError: () => alert('Virhe setin poistamisessa'),
+    });
   };
 
   if (!workout) return <p>Ladataan...</p>;
@@ -77,7 +53,8 @@ export default function WorkoutDetailPage() {
           </button>
           <button
             onClick={handleDelete}
-            className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded"
+            disabled={deleteWorkout.isPending}
+            className="text-red-600 font-semibold border border-red-600 px-3 py-1 rounded disabled:opacity-50"
           >
             Poista
           </button>
@@ -111,10 +88,7 @@ export default function WorkoutDetailPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    const idx = workout.sets.indexOf(set);
-                    handleRemoveSet(idx);
-                  }}
+                  onClick={() => handleRemoveSet(set.id)}
                   className="text-red-600 font-semibold text-sm"
                 >
                   ✕

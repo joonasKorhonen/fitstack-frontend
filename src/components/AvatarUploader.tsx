@@ -1,32 +1,22 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { authFetch } from '../lib/authFetch';
-
-export type UserProfile = {
-  id: string;
-  username: string;
-  avatarUrl: string | null;
-  createdAt: string;
-};
+import { UserProfile, useUploadAvatar, useRemoveAvatar } from '../hooks/profile';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 
 type Props = {
   profile: UserProfile;
-  onProfileUpdated: (profile: UserProfile) => void;
 };
 
-export default function AvatarUploader({ profile, onProfileUpdated }: Props) {
+export default function AvatarUploader({ profile }: Props) {
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [removing, setRemoving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const uploadAvatar = useUploadAvatar();
+  const removeAvatar = useRemoveAvatar();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -42,44 +32,25 @@ export default function AvatarUploader({ profile, onProfileUpdated }: Props) {
     }
 
     setError(null);
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await authFetch('http://localhost:3001/api/users/avatar', router, {
-        method: 'POST',
-        body: formData,
-      });
-      if (!res) return;
-      if (!res.ok) throw new Error('Kuvan lataus epäonnistui');
-      const updated: UserProfile = await res.json();
-      onProfileUpdated(updated);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Tuntematon virhe');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    uploadAvatar.mutate(file, {
+      onError: (err) =>
+        setError(err instanceof Error ? err.message : 'Kuvan lataus epäonnistui'),
+      onSettled: () => {
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+    });
   };
 
-  const handleRemove = async () => {
+  const handleRemove = () => {
     setError(null);
-    setRemoving(true);
-    try {
-      const res = await authFetch('http://localhost:3001/api/users/avatar', router, {
-        method: 'DELETE',
-      });
-      if (!res) return;
-      if (!res.ok) throw new Error('Kuvan poisto epäonnistui');
-      const updated: UserProfile = await res.json();
-      onProfileUpdated(updated);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Tuntematon virhe');
-    } finally {
-      setRemoving(false);
-    }
+    removeAvatar.mutate(undefined, {
+      onError: (err) =>
+        setError(err instanceof Error ? err.message : 'Kuvan poisto epäonnistui'),
+    });
   };
 
+  const uploading = uploadAvatar.isPending;
+  const removing = removeAvatar.isPending;
   const busy = uploading || removing;
 
   return (
