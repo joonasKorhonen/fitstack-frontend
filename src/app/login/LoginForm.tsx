@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { API_URL } from '../../lib/apiFetch';
 import { endpoints } from '../../lib/endpoints';
+import { tokenStore } from '../../lib/tokenStore';
 
 export default function LoginForm() {
   const [username, setUserName] = useState('');
@@ -18,20 +19,20 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const res = await axios.post(`${API_URL}${endpoints.auth.login}`, {
-        username,
-        password
-      });
+      const res = await axios.post(
+        `${API_URL}${endpoints.auth.login}`,
+        { username, password },
+        { withCredentials: true },
+      );
 
-      const { accessToken, refreshToken } = res.data;
+      const { accessToken } = res.data;
       if (!accessToken) {
         console.error('Server did not return token:', res.data);
         setError('Authentication failed: Server did not return a valid token');
         return;
       }
 
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+      tokenStore.set(accessToken);
 
       alert('Login successful ✅');
       router.push('/workouts');

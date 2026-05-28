@@ -1,7 +1,8 @@
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { authFetch } from './authFetch';
+import { API_URL } from './apiUrl';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+export { API_URL };
 
 export class UnauthenticatedError extends Error {
   constructor() {

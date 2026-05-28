@@ -3,6 +3,7 @@ export const endpoints = {
     login: '/api/auth/login',
     register: '/api/auth/register',
     logout: '/api/auth/logout',
+    refresh: '/api/auth/refresh',
   },
   users: {
     profile: '/api/users/profile',
